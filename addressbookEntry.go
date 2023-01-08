@@ -43,12 +43,12 @@ type get_personal_address_listRequestResponse struct {
 		GetPersonalAddressListResponse struct {
 			Text            string            `xml:",chardata"`
 			Result          string            `xml:"result"`
-			PersonalAddress []PersonalAddress `xml:"personal_address"`
+			PersonalAddress []personalAddress `xml:"personal_address"`
 		} `xml:"get_personal_address_listResponse"`
 	} `xml:"Body"`
 }
 
-type PersonalAddress struct {
+type personalAddress struct {
 	Text            string `xml:",chardata"`
 	NameInformation struct {
 		Text     string `xml:",chardata"`
@@ -115,7 +115,7 @@ type destroy_personal_address_enumerationRequestResponse struct {
 	} `xml:"Body"`
 }
 
-func (c *Config) GetAddressbookEntry() []PersonalAddress {
+func (c *Config) GetAddressbookEntry() []personalAddress {
 	var create create_personal_address_enumerationRequestResponse
 	var data get_personal_address_listRequestResponse
 	var destroy destroy_personal_address_enumerationRequestResponse
@@ -125,9 +125,9 @@ func (c *Config) GetAddressbookEntry() []PersonalAddress {
 			if c.reuqest("/ws/km-wsdl/setting/address_book", strings.Replace(destroy_personal_address_enumerationRequest, "@@request_id@@", create.Body.CreatePersonalAddressEnumerationResponse.Enumeration, 1), &destroy) && destroy.Body.DestroyPersonalAddressEnumerationResponse.Result == "SUCCESS" {
 				return data.Body.GetPersonalAddressListResponse.PersonalAddress
 			}
-			return []PersonalAddress{}
+			return []personalAddress{}
 		}
-		return []PersonalAddress{}
+		return []personalAddress{}
 	}
-	return []PersonalAddress{}
+	return []personalAddress{}
 }

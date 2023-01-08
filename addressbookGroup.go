@@ -58,7 +58,7 @@ type groupAddress struct {
 	GroupAddressRegistrationInformation struct {
 		Text            string            `xml:",chardata"`
 		Type            string            `xml:"type"`
-		PersonalAddress []PersonalAddress `xml:"personal_address"`
+		PersonalAddress []personalAddress `xml:"personal_address"`
 	} `xml:"group_address_registration_information"`
 }
 
