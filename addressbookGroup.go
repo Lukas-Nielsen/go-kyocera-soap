@@ -82,13 +82,20 @@ func (c *Config) GetAddressbookGroup() []groupAddress {
 	var create create_group_address_enumerationRequestResponse
 	var data get_group_address_listRequestResponse
 	var destroy destroy_group_address_enumerationRequestResponse
+	prepare := true
 	if c.reuqest("/ws/km-wsdl/setting/address_book", strings.Replace(create_group_address_enumerationRequest, "@@list_count@@", "100", 1), &create) && create.Body.CreateGroupAddressEnumerationResponse.Result == "SUCCESS" {
-		time.Sleep(5 * time.Second)
-		if c.reuqest("/ws/km-wsdl/setting/address_book", strings.Replace(get_group_address_listRequest, "@@request_id@@", create.Body.CreateGroupAddressEnumerationResponse.Enumeration, 1), &data) && data.Body.GetGroupAddressListResponse.Result == "ALL_GET_COMPLETE" {
-			if c.reuqest("/ws/km-wsdl/setting/address_book", strings.Replace(destroy_group_address_enumerationRequest, "@@request_id@@", create.Body.CreateGroupAddressEnumerationResponse.Enumeration, 1), &destroy) && destroy.Body.DestroyGroupAddressEnumerationResponse.Result == "SUCCESS" {
-				return data.Body.GetGroupAddressListResponse.GroupAddress
+		for prepare {
+			get := c.reuqest("/ws/km-wsdl/setting/address_book", strings.Replace(get_group_address_listRequest, "@@request_id@@", create.Body.CreateGroupAddressEnumerationResponse.Enumeration, 1), &data)
+			if get && data.Body.GetGroupAddressListResponse.Result == "ALL_GET_COMPLETE" {
+				if c.reuqest("/ws/km-wsdl/setting/address_book", strings.Replace(destroy_group_address_enumerationRequest, "@@request_id@@", create.Body.CreateGroupAddressEnumerationResponse.Enumeration, 1), &destroy) && destroy.Body.DestroyGroupAddressEnumerationResponse.Result == "SUCCESS" {
+					return data.Body.GetGroupAddressListResponse.GroupAddress
+				}
+			} else if get && data.Body.GetGroupAddressListResponse.Result == "PREPARING_NOW" {
+				prepare = true
+			} else {
+				prepare = false
 			}
-			return []groupAddress{}
+			time.Sleep(500 * time.Millisecond)
 		}
 		return []groupAddress{}
 	}

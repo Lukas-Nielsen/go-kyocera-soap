@@ -119,13 +119,21 @@ func (c *Config) GetAddressbookEntry() []personalAddress {
 	var create create_personal_address_enumerationRequestResponse
 	var data get_personal_address_listRequestResponse
 	var destroy destroy_personal_address_enumerationRequestResponse
+	prepare := true
 	if c.reuqest("/ws/km-wsdl/setting/address_book", strings.Replace(create_personal_address_enumerationRequest, "@@list_count@@", "1000", 1), &create) && create.Body.CreatePersonalAddressEnumerationResponse.Result == "SUCCESS" {
-		time.Sleep(5 * time.Second)
-		if c.reuqest("/ws/km-wsdl/setting/address_book", strings.Replace(get_personal_address_listRequest, "@@request_id@@", create.Body.CreatePersonalAddressEnumerationResponse.Enumeration, 1), &data) && data.Body.GetPersonalAddressListResponse.Result == "ALL_GET_COMPLETE" {
-			if c.reuqest("/ws/km-wsdl/setting/address_book", strings.Replace(destroy_personal_address_enumerationRequest, "@@request_id@@", create.Body.CreatePersonalAddressEnumerationResponse.Enumeration, 1), &destroy) && destroy.Body.DestroyPersonalAddressEnumerationResponse.Result == "SUCCESS" {
-				return data.Body.GetPersonalAddressListResponse.PersonalAddress
+		for prepare {
+			get := c.reuqest("/ws/km-wsdl/setting/address_book", strings.Replace(get_personal_address_listRequest, "@@request_id@@", create.Body.CreatePersonalAddressEnumerationResponse.Enumeration, 1), &data)
+			if get && data.Body.GetPersonalAddressListResponse.Result == "ALL_GET_COMPLETE" {
+				if c.reuqest("/ws/km-wsdl/setting/address_book", strings.Replace(destroy_personal_address_enumerationRequest, "@@request_id@@", create.Body.CreatePersonalAddressEnumerationResponse.Enumeration, 1), &destroy) && destroy.Body.DestroyPersonalAddressEnumerationResponse.Result == "SUCCESS" {
+					return data.Body.GetPersonalAddressListResponse.PersonalAddress
+				}
+				prepare = false
+			} else if get && data.Body.GetPersonalAddressListResponse.Result == "PREPARING_NOW" {
+				prepare = true
+			} else {
+				prepare = false
 			}
-			return []personalAddress{}
+			time.Sleep(500 * time.Millisecond)
 		}
 		return []personalAddress{}
 	}
