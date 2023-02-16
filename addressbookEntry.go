@@ -116,26 +116,40 @@ type destroy_personal_address_enumerationRequestResponse struct {
 }
 
 func (c *Config) GetAddressbookEntry() []personalAddress {
-	var create create_personal_address_enumerationRequestResponse
-	var data get_personal_address_listRequestResponse
-	var destroy destroy_personal_address_enumerationRequestResponse
-	prepare := true
-	if c.reuqest("/ws/km-wsdl/setting/address_book", strings.Replace(create_personal_address_enumerationRequest, "@@list_count@@", "1000", 1), &create) && create.Body.CreatePersonalAddressEnumerationResponse.Result == "SUCCESS" {
-		for prepare {
-			get := c.reuqest("/ws/km-wsdl/setting/address_book", strings.Replace(get_personal_address_listRequest, "@@request_id@@", create.Body.CreatePersonalAddressEnumerationResponse.Enumeration, 1), &data)
-			if get && data.Body.GetPersonalAddressListResponse.Result == "ALL_GET_COMPLETE" {
-				if c.reuqest("/ws/km-wsdl/setting/address_book", strings.Replace(destroy_personal_address_enumerationRequest, "@@request_id@@", create.Body.CreatePersonalAddressEnumerationResponse.Enumeration, 1), &destroy) && destroy.Body.DestroyPersonalAddressEnumerationResponse.Result == "SUCCESS" {
-					return data.Body.GetPersonalAddressListResponse.PersonalAddress
-				}
-				prepare = false
-			} else if get && data.Body.GetPersonalAddressListResponse.Result == "PREPARING_NOW" {
-				prepare = true
-			} else {
-				prepare = false
-			}
-			time.Sleep(500 * time.Millisecond)
-		}
-		return []personalAddress{}
+	if create := c.addressEnumeration(); create.Body.CreatePersonalAddressEnumerationResponse.Result == "SUCCESS" {
+		data := c.addressData(create.Body.CreatePersonalAddressEnumerationResponse.Enumeration)
+		return data.Body.GetPersonalAddressListResponse.PersonalAddress
 	}
 	return []personalAddress{}
+}
+
+func (c *Config) addressEnumeration() create_personal_address_enumerationRequestResponse {
+	var create create_personal_address_enumerationRequestResponse
+	if c.reuqest("/ws/km-wsdl/setting/address_book", strings.Replace(create_personal_address_enumerationRequest, "@@list_count@@", "1000", 1), &create) {
+		return create
+	}
+	return create_personal_address_enumerationRequestResponse{}
+}
+
+func (c *Config) addressData(id string) get_personal_address_listRequestResponse {
+	var data get_personal_address_listRequestResponse
+	if c.reuqest("/ws/km-wsdl/setting/address_book", strings.Replace(get_personal_address_listRequest, "@@request_id@@", id, 1), &data) {
+		if data.Body.GetPersonalAddressListResponse.Result == "ALL_GET_COMPLETE" {
+			return data
+		} else if data.Body.GetPersonalAddressListResponse.Result == "PREPARING_NOW" {
+			time.Sleep(500 * time.Millisecond)
+			return c.addressData(id)
+		}
+	}
+	return get_personal_address_listRequestResponse{}
+}
+
+func (c *Config) addressDestroy(id string) bool {
+	var destroy destroy_personal_address_enumerationRequestResponse
+	if c.reuqest("/ws/km-wsdl/setting/address_book", strings.Replace(destroy_group_address_enumerationRequest, "@@request_id@@", id, 1), &destroy) {
+		if destroy.Body.DestroyPersonalAddressEnumerationResponse.Result == "SUCCESS" {
+			return true
+		}
+	}
+	return false
 }
