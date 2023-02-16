@@ -34,5 +34,8 @@ func (c *Config) reuqest(path string, body string, result any) bool {
 		log.Println(resp.Error())
 		return false
 	}
+	if c.debug {
+		log.Printf("%+v", result)
+	}
 	return true
 }

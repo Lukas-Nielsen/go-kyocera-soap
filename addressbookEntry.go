@@ -118,6 +118,7 @@ type destroy_personal_address_enumerationRequestResponse struct {
 func (c *Config) GetAddressbookEntry() []personalAddress {
 	if create := c.addressEnumeration(); create.Body.CreatePersonalAddressEnumerationResponse.Result == "SUCCESS" {
 		data := c.addressData(create.Body.CreatePersonalAddressEnumerationResponse.Enumeration)
+		c.addressDestroy(create.Body.CreatePersonalAddressEnumerationResponse.Enumeration)
 		return data.Body.GetPersonalAddressListResponse.PersonalAddress
 	}
 	return []personalAddress{}
