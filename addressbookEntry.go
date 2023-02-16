@@ -135,7 +135,7 @@ func (c *Config) addressEnumeration() create_personal_address_enumerationRequest
 func (c *Config) addressData(id string) get_personal_address_listRequestResponse {
 	var data get_personal_address_listRequestResponse
 	if c.reuqest("/ws/km-wsdl/setting/address_book", strings.Replace(get_personal_address_listRequest, "@@request_id@@", id, 1), &data) {
-		if data.Body.GetPersonalAddressListResponse.Result == "ALL_GET_COMPLETE" {
+		if data.Body.GetPersonalAddressListResponse.Result == "ALL_GET_COMPLETE" || data.Body.GetPersonalAddressListResponse.Result == "SUCCESS" {
 			return data
 		} else if data.Body.GetPersonalAddressListResponse.Result == "PREPARING_NOW" {
 			time.Sleep(500 * time.Millisecond)
